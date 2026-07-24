@@ -1,39 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, Container, Typography, Stack, Button, 
-  Alert, CircularProgress, Divider, Link,
-  InputLabel, OutlinedInput, FormHelperText, FormControl
-} from '@mui/material';
-import { CheckCircleOutlined, InfoOutlined, ShieldOutlined } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { matchIsValidTel, MuiTelInput } from 'mui-tel-input';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, Info, Shield, Loader2 } from 'lucide-react';
+import * as Label from '@radix-ui/react-label';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { PhoneInput } from '../components/PhoneInput';
+
+export function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+
+const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
 const schema = yup.object().shape({
-  whatsappNumber: yup.string().test('is-valid-phone', 'Please enter a valid phone number', (value) => matchIsValidTel(value || '')).required('Primary phone is required'),
-  altNumber: yup.string().test('is-valid-alt-phone', 'Please enter a valid phone number', (value) => !value || matchIsValidTel(value)),
-  email: yup.string().email('Invalid email address').required('Email is required'),
-  name: yup.string().required('Your Name is required'),
-  problem: yup.string().required('Please tell us how we can help'),
+  whatsappNumber: yup.string().matches(phoneRegex, 'Enter a valid phone number.').required('Phone number is required.'),
+  altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || phoneRegex.test(value)),
+  email: yup.string().email('Enter a valid email address.').required('Business email is required.'),
+  name: yup.string().required('Enter your full name.'),
+  problem: yup.string().required('Describe your issue.'),
 });
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxLRftndaH_znmmYtWfL9mmP9hoWXiPaBb8sOGBO5DPXZncXF4hX5akHaMgj8CEcMwW/exec";
 
-// Custom Input Field Wrapper to enforce label above and helper text below
 const CustomField = ({ label, required, error, helperText, children, htmlFor }) => (
-  <FormControl error={!!error} fullWidth variant="outlined">
-    <InputLabel htmlFor={htmlFor} shrink sx={{ transform: 'none', position: 'relative', mb: '6px', fontWeight: 500, color: 'text.primary', fontSize: '14px' }}>
-      {label} {required && <span aria-hidden="true" style={{ color: '#94A3B8' }}>*</span>}
-    </InputLabel>
+  <div className="flex flex-col space-y-2 w-full">
+    <Label.Root htmlFor={htmlFor} className="text-[14px] font-medium text-gray-900">
+      {label} {required && <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>}
+    </Label.Root>
     {children}
     {(helperText || error) && (
-      <FormHelperText role={error ? "alert" : undefined} sx={{ mx: 0, mt: '6px', fontSize: '14px', color: error ? 'error.main' : 'text.secondary' }}>
+      <p 
+        role={error ? "alert" : undefined} 
+        className={cn("text-[13px] leading-[1.4]", error ? "text-red-600" : "text-gray-500")}
+      >
         {error ? error.message : helperText}
-      </FormHelperText>
+      </p>
     )}
-  </FormControl>
+  </div>
 );
+
+const inputStyles = "flex h-12 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-[15px] text-gray-900 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function TicketForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +91,7 @@ export default function TicketForm() {
       action: "submit_ticket",
       leadId: leadId,
       ...data,
-      phone: data.whatsappNumber // Map whatsappNumber to phone for backend if needed
+      phone: data.whatsappNumber
     };
 
     try {
@@ -104,192 +113,212 @@ export default function TicketForm() {
       }, 3000);
     } catch (err) {
       setIsSubmitting(false);
-      setErrorMsg('Failed to submit ticket. Please try again.');
+      setErrorMsg('Failed to send enquiry. Please try again.');
     }
   };
 
-  if (isSuccess) {
-    return (
-      <Container maxWidth={false} sx={{ maxWidth: '680px', py: { xs: 6, md: 10 } }}>
-        <Box 
-          role="status" 
-          tabIndex={-1} 
-          ref={(el) => { if (el) el.focus(); }}
-          textAlign="center" p={{ xs: 4, md: 6 }} borderRadius={4} bgcolor="#FFFFFF" border="1px solid #E2E8F0" boxShadow="0 4px 24px rgba(0,0,0,0.02)"
-          sx={{ outline: 'none' }}
-        >
-          <CheckCircleOutlined sx={{ fontSize: 64, color: 'success.main', mb: 3 }} />
-          <Typography variant="h2" gutterBottom color="text.primary" sx={{ fontSize: { xs: '1.75rem', md: '2rem' } }}>
-            Thanks for reaching out.
-          </Typography>
-          <Typography variant="body1" color="text.secondary" mb={2} sx={{ fontSize: '1rem', maxWidth: '400px', mx: 'auto' }}>
-            We've received your enquiry and our team usually replies within one business day.
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={5}>
-            If your enquiry is urgent, you can also contact us on WhatsApp or email{' '}
-            <Link href="mailto:support@userxpert.in" fontWeight={500} color="primary.main" underline="hover">
-              support@userxpert.in
-            </Link>.
-          </Typography>
-          <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} justifyContent="center">
-            <Button variant="outlined" component="a" href="https://userx-site.vercel.app/" sx={{ minHeight: '48px', minWidth: '160px' }}>
-              Return Home
-            </Button>
-            <Button variant="contained" onClick={() => window.location.reload()} sx={{ minHeight: '48px', minWidth: '160px' }}>
-              Send Another Enquiry
-            </Button>
-          </Stack>
-        </Box>
-      </Container>
-    );
-  }
-
   return (
-    <Container maxWidth={false} sx={{ maxWidth: '680px', py: { xs: 4, md: 8 } }}>
-      <Box mb={5} textAlign="center">
-        <Typography variant="h1" gutterBottom sx={{ fontSize: { xs: '2rem', md: '2.5rem' }, mb: 2 }}>
-          How Can We Help?
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.125rem' }}>
-          Tell us about the issue or question you have. We usually respond within one business day.
-        </Typography>
-      </Box>
-
-      {errorMsg && (
-        <Alert severity="error" sx={{ mb: 4, borderRadius: 2 }}>
-          {errorMsg}
-        </Alert>
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <Stack spacing={4}>
-          <Box p={{ xs: 3, md: 4 }} borderRadius={4} bgcolor="#FFFFFF" border="1px solid #E2E8F0">
-            <Stack spacing={3}>
-              <Controller
-                name="whatsappNumber"
-                control={control}
-                render={({ field: { ref, ...field } }) => (
-                  <CustomField label="Primary Phone Number" required htmlFor="whatsappNumber" error={errors.whatsappNumber} helperText="We'll use this to contact you.">
-                    <MuiTelInput 
-                      {...field}
-                      id="whatsappNumber"
-                      autoComplete="tel"
-                      defaultCountry="IN"
-                      forceCallingCode
-                      focusOnSelectCountry
-                      variant="outlined"
-                      InputProps={{ notched: false }}
-                      inputRef={ref}
-                      sx={{
-                        '& .MuiOutlinedInput-root': { borderRadius: '12px' },
-                        '& .MuiIconButton-root': { width: '44px', height: '44px', ml: 1 }
-                      }}
-                    />
-                  </CustomField>
-                )}
-              />
-
-              <Controller
-                name="altNumber"
-                control={control}
-                render={({ field: { ref, ...field } }) => (
-                  <CustomField label="Backup Phone Number" htmlFor="altNumber" error={errors.altNumber} helperText="(Optional) Only if you'd like us to try another number.">
-                    <MuiTelInput 
-                      {...field}
-                      id="altNumber"
-                      autoComplete="tel"
-                      defaultCountry="IN"
-                      forceCallingCode
-                      focusOnSelectCountry
-                      variant="outlined"
-                      InputProps={{ notched: false }}
-                      inputRef={ref}
-                      sx={{
-                        '& .MuiOutlinedInput-root': { borderRadius: '12px' },
-                        '& .MuiIconButton-root': { width: '44px', height: '44px', ml: 1 }
-                      }}
-                    />
-                  </CustomField>
-                )}
-              />
-
-              <Controller
-                name="email"
-                control={control}
-                render={({ field }) => (
-                  <CustomField label="Email Address" required htmlFor="email" error={errors.email} helperText="We'll send updates about your ticket here.">
-                    <OutlinedInput {...field} id="email" type="email" autoComplete="email" placeholder="name@example.com" notched={false} aria-required="true" aria-invalid={!!errors.email} />
-                  </CustomField>
-                )}
-              />
-
-              <Controller
-                name="name"
-                control={control}
-                render={({ field }) => (
-                  <CustomField label="Your Name" required htmlFor="name" error={errors.name}>
-                    <OutlinedInput {...field} id="name" autoComplete="name" placeholder="First and Last Name" notched={false} aria-required="true" aria-invalid={!!errors.name} />
-                  </CustomField>
-                )}
-              />
-
-              <Controller
-                name="problem"
-                control={control}
-                render={({ field }) => (
-                  <CustomField label="How can we help?" required htmlFor="problem" error={errors.problem}>
-                    <OutlinedInput 
-                      {...field} 
-                      id="problem" 
-                      placeholder='Please describe the issue or problem you&apos;re facing.&#10;&#10;Example: "The new leads from my website aren&apos;t showing up in our Google Sheet."'
-                      multiline 
-                      minRows={2} 
-                      notched={false} 
-                      aria-required="true" 
-                      aria-invalid={!!errors.problem}
-                      sx={{ '& textarea': { resize: 'vertical', minHeight: '60px' } }}
-                    />
-                  </CustomField>
-                )}
-              />
-            </Stack>
-          </Box>
-
-          <Button 
-            type="submit" 
-            variant="contained" 
-            size="large" 
-            fullWidth 
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
-            sx={{ minHeight: '52px' }}
+    <div className="w-full flex flex-col items-center">
+      <div className="w-full max-w-[680px] h-32 md:h-48 shrink-0 relative rounded-b-2xl md:rounded-b-3xl overflow-hidden shadow-sm">
+        <img src="/banner.jfif" alt="Brand Banner" className="absolute inset-0 w-full h-full object-cover" />
+      </div>
+      
+      <div className="w-full max-w-[680px] px-4 py-8 md:py-12">
+        <AnimatePresence mode="wait">
+        {isSuccess ? (
+          <motion.div 
+            key="success"
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="flex flex-col items-center text-center p-8 md:p-12 bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
           >
-            {isSubmitting ? 'Sending...' : 'Send Message'}
-          </Button>
-        </Stack>
-      </form>
-      
-      <Divider sx={{ my: 4 }} />
-      
-      <Stack spacing={2} mb={4} color="text.secondary">
-        <Box display="flex" alignItems="flex-start" gap={1.5}>
-          <InfoOutlined sx={{ color: 'text.secondary', fontSize: '20px', mt: '2px' }} />
-          <Typography variant="body2" sx={{ fontSize: '0.9375rem', lineHeight: 1.5 }}>Most enquiries receive a reply within one business day.</Typography>
-        </Box>
-        <Box display="flex" alignItems="flex-start" gap={1.5}>
-          <ShieldOutlined sx={{ color: 'text.secondary', fontSize: '20px', mt: '2px' }} />
-          <Typography variant="body2" sx={{ fontSize: '0.9375rem', lineHeight: 1.5 }}>Your information is only used to respond to your enquiry.</Typography>
-        </Box>
-      </Stack>
+            <CheckCircle2 className="w-16 h-16 text-green-500 mb-6" />
+            <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 tracking-tight">
+              Thanks! We've received your enquiry.
+            </h2>
+            <p className="text-base text-gray-600 mb-8 max-w-[400px]">
+              We'll review it and contact you within one business day.
+            </p>
+            <p className="text-[14px] text-gray-500 mb-10">
+              If your enquiry is urgent, you can also contact us on WhatsApp or email{' '}
+              <a href="mailto:support@userxpert.in" className="font-medium text-[#b512b8] hover:underline">
+                support@userxpert.in
+              </a>.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+              <a 
+                href="https://userx-site.vercel.app/" 
+                className="flex items-center justify-center h-12 px-6 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-colors w-full sm:w-auto"
+              >
+                Return home
+              </a>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="flex items-center justify-center h-12 px-6 rounded-xl bg-[#b512b8] text-white font-medium hover:bg-[#8c0c8e] transition-colors w-full sm:w-auto"
+              >
+                Send another enquiry
+              </button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
 
-      <Divider sx={{ my: 4 }} />
 
-      <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ fontSize: '0.9375rem' }}>
-        Need a faster response? WhatsApp us or email{' '}
-        <Link href="mailto:support@userxpert.in" fontWeight={500} color="primary.main" underline="hover">
-          support@userxpert.in
-        </Link>.
-      </Typography>
-    </Container>
+            <div className="mb-10">
+              <h1 className="text-3xl md:text-[40px] font-semibold text-gray-900 mb-4 tracking-tight">
+                Support request
+              </h1>
+              <p className="text-[17px] text-gray-500 max-w-[500px]">
+                Tell us about your issue or question. We usually respond within one business day.
+              </p>
+            </div>
+
+            {errorMsg && (
+              <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
+              <div className="p-6 md:p-8 bg-white rounded-3xl border border-gray-200/60 shadow-[0_2px_20px_rgb(0,0,0,0.02)] space-y-6">
+                
+                <Controller
+                  name="whatsappNumber"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomField label="Phone number" required htmlFor="whatsappNumber" error={errors.whatsappNumber} helperText="We'll use this to contact you.">
+                      <PhoneInput
+                        {...field}
+                        id="whatsappNumber"
+                        placeholder="+91 99999 99999"
+                        error={!!errors.whatsappNumber}
+                      />
+                    </CustomField>
+                  )}
+                />
+
+                <Controller
+                  name="altNumber"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber} helperText="Only if you'd like us to try another number.">
+                      <PhoneInput
+                        {...field}
+                        id="altNumber"
+                        placeholder="+91 99999 99999"
+                        error={!!errors.altNumber}
+                      />
+                    </CustomField>
+                  )}
+                />
+
+                <Controller
+                  name="email"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomField label="Business email" required htmlFor="email" error={errors.email} helperText="We'll send updates here.">
+                      <input 
+                        {...field}
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="name@company.com"
+                        aria-invalid={!!errors.email}
+                        className={cn(inputStyles, errors.email && "border-red-500 focus-visible:ring-red-500")}
+                      />
+                    </CustomField>
+                  )}
+                />
+
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomField label="Full name" required htmlFor="name" error={errors.name}>
+                      <input 
+                        {...field}
+                        id="name"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Jane Doe"
+                        aria-invalid={!!errors.name}
+                        className={cn(inputStyles, errors.name && "border-red-500 focus-visible:ring-red-500")}
+                      />
+                    </CustomField>
+                  )}
+                />
+
+                <Controller
+                  name="problem"
+                  control={control}
+                  render={({ field }) => (
+                    <CustomField label="Issue description" required htmlFor="problem" error={errors.problem}>
+                      <textarea 
+                        {...field}
+                        id="problem"
+                        rows={4}
+                        placeholder="Describe your goals, current challenges, or anything you'd like us to know."
+                        aria-invalid={!!errors.problem}
+                        className={cn(
+                          inputStyles, 
+                          "py-3 resize-y min-h-[100px]", 
+                          errors.problem && "border-red-500 focus-visible:ring-red-500"
+                        )}
+                      />
+                    </CustomField>
+                  )}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="relative flex items-center justify-center w-full h-14 bg-[#b512b8] hover:bg-[#8c0c8e] text-white font-medium text-[16px] rounded-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden shadow-sm"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending enquiry...
+                  </span>
+                ) : (
+                  <span>Send enquiry</span>
+                )}
+              </button>
+            </form>
+
+            <div className="my-10 border-t border-gray-200"></div>
+
+            <div className="space-y-4 mb-10">
+              <div className="flex items-start gap-3 text-gray-500">
+                <Info className="w-5 h-5 mt-0.5 shrink-0" />
+                <p className="text-[14px] leading-relaxed">Most enquiries receive a reply within one business day.</p>
+              </div>
+              <div className="flex items-start gap-3 text-gray-500">
+                <Shield className="w-5 h-5 mt-0.5 shrink-0" />
+                <p className="text-[14px] leading-relaxed">Used only for your enquiry. We never share your information.</p>
+              </div>
+            </div>
+
+            <div className="my-10 border-t border-gray-200"></div>
+
+            <p className="text-center text-[14px] text-gray-500">
+              Need a faster response? WhatsApp us or email{' '}
+              <a href="mailto:support@userxpert.in" className="font-medium text-[#b512b8] hover:underline">
+                support@userxpert.in
+              </a>.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
+    </div>
   );
 }

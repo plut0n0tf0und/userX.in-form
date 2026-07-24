@@ -1,46 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, Container, Typography, Stack, Button, 
-  Card, CardActionArea, Radio, Alert, Collapse, CircularProgress,
-  InputLabel, OutlinedInput, FormHelperText, FormControl
-} from '@mui/material';
-import { CheckCircleOutlined, LockOutlined } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { matchIsValidTel, MuiTelInput } from 'mui-tel-input';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, Lock, Loader2 } from 'lucide-react';
+import * as Label from '@radix-ui/react-label';
+import * as RadioGroup from '@radix-ui/react-radio-group';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { PhoneInput } from '../components/PhoneInput';
 
-const steps = ['Contact Information', 'Business & Requirements'];
+export function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+
+const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+
+const steps = ['Contact details', 'Project details'];
 
 const schema = yup.object().shape({
-  name: yup.string().required('Full Name is required'),
-  email: yup.string().email('Invalid email address').required('Email is required'),
-  whatsappNumber: yup.string().test('is-valid-phone', 'Please enter a valid phone number', (value) => matchIsValidTel(value || '')).required('WhatsApp number is required'),
-  altNumber: yup.string().test('is-valid-alt-phone', 'Please enter a valid phone number', (value) => !value || matchIsValidTel(value)),
+  name: yup.string().required('Enter your full name.'),
+  email: yup.string().email('Enter a valid email address.').required('Enter your business email.'),
+  whatsappNumber: yup.string().matches(phoneRegex, 'Enter a valid phone number.').required('Phone number is required.'),
+  altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || phoneRegex.test(value)),
   
-  businessName: yup.string().required('Name of Business is required'),
-  serviceOffered: yup.string().required('Service or Product You Offer is required'),
-  reqSummary: yup.string().required('Requirement summary is required'),
-  expectedOutcome: yup.string().required('Expected outcome is required'),
-  assistanceType: yup.string().required('Please select how you would like to proceed'),
+  businessName: yup.string().required('Enter your company name.'),
+  serviceOffered: yup.string().required('Enter your product or service.'),
+  reqSummary: yup.string().required('Enter a project summary.'),
+  expectedOutcome: yup.string().required('Enter expected outcome.'),
+  assistanceType: yup.string().required('Select how to proceed.'),
 });
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxLRftndaH_znmmYtWfL9mmP9hoWXiPaBb8sOGBO5DPXZncXF4hX5akHaMgj8CEcMwW/exec";
 
-// Custom Input Field Wrapper to enforce label above and helper text below
 const CustomField = ({ label, required, error, helperText, children, htmlFor }) => (
-  <FormControl error={!!error} fullWidth variant="outlined">
-    <InputLabel htmlFor={htmlFor} shrink sx={{ transform: 'none', position: 'relative', mb: '6px', fontWeight: 500, color: 'text.primary', fontSize: '14px' }}>
-      {label} {required && <span aria-hidden="true" style={{ color: '#94A3B8', marginLeft: '2px' }}>*</span>}
-    </InputLabel>
+  <div className="flex flex-col space-y-2 w-full">
+    <Label.Root htmlFor={htmlFor} className="text-[14px] font-medium text-gray-900">
+      {label} {required && <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>}
+    </Label.Root>
     {children}
     {(helperText || error) && (
-      <FormHelperText role={error ? "alert" : undefined} sx={{ mx: 0, mt: '6px', fontSize: '13px', color: error ? 'error.main' : 'text.secondary', lineHeight: 1.4 }}>
+      <p 
+        role={error ? "alert" : undefined} 
+        className={cn("text-[13px] leading-[1.4]", error ? "text-red-600" : "text-gray-500")}
+      >
         {error ? error.message : helperText}
-      </FormHelperText>
+      </p>
     )}
-  </FormControl>
+  </div>
 );
+
+const inputStyles = "flex h-12 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-[15px] text-gray-900 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function ProjectForm() {
   const [activeStep, setActiveStep] = useState(0);
@@ -78,7 +88,6 @@ export default function ProjectForm() {
     }
 
     if (urlPhone) {
-      // Decode and strip any extraneous characters if needed, but MuiTelInput handles + mostly well
       let cleanPhone = decodeURIComponent(urlPhone).trim();
       if (!cleanPhone.startsWith('+') && /^\d/.test(cleanPhone)) {
          cleanPhone = '+' + cleanPhone; 
@@ -145,306 +154,382 @@ export default function ProjectForm() {
       }, 3000);
     } catch (err) {
       setIsSubmitting(false);
-      setErrorMsg('Failed to submit form. Please try again.');
+      setErrorMsg('Failed to send enquiry. Please try again.');
     }
   };
 
-  if (isSuccess) {
-    return (
-      <Container maxWidth={false} sx={{ maxWidth: '680px', py: { xs: 6, md: 10 } }}>
-        <Box 
-          role="status" 
-          tabIndex={-1} 
-          ref={(el) => { if (el) el.focus(); }}
-          textAlign="center" p={{ xs: 4, md: 6 }} borderRadius={3} bgcolor="#FFFFFF" border="1px solid #E2E8F0" boxShadow="0 4px 24px rgba(0,0,0,0.02)"
-          sx={{ outline: 'none' }}
-        >
-          <CheckCircleOutlined sx={{ fontSize: 56, color: 'success.main', mb: 2 }} />
-          <Typography variant="h2" gutterBottom color="text.primary" sx={{ fontSize: { xs: '1.5rem', md: '1.75rem' } }}>
-            Submission Successful
-          </Typography>
-          <Typography variant="body1" color="text.secondary" mb={4} sx={{ fontSize: '1rem', maxWidth: '400px', mx: 'auto' }}>
-            We've received your requirements and will review them shortly. A confirmation email has been sent to you.
-          </Typography>
-          <Box display="inline-flex" alignItems="center" gap={1.5} px={2.5} py={1} bgcolor="primary.light" color="primary.main" borderRadius={2} fontWeight={500} sx={{ background: 'rgba(181, 18, 184, 0.08)', fontSize: '14px' }}>
-            <CircularProgress size={16} color="inherit" />
-            Redirecting to WhatsApp...
-          </Box>
-        </Box>
-      </Container>
-    );
-  }
-
-  const CustomStepper = () => (
-    <Box mb={4}>
-      <Typography variant="body2" color="text.secondary" fontWeight={500} mb={0.5} sx={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        Step {activeStep + 1} of {steps.length}
-      </Typography>
-      <Typography variant="h2" component="h2" color="text.primary" sx={{ fontSize: '1.25rem', fontWeight: 600, mb: 2 }}>
-        {steps[activeStep]}
-      </Typography>
-      <Stack direction="row" spacing={1} alignItems="center">
-        {steps.map((_, index) => (
-          <Box 
-            key={index}
-            sx={{
-              height: '4px',
-              flex: 1,
-              bgcolor: index <= activeStep ? 'primary.main' : 'divider',
-              borderRadius: '2px',
-              transition: 'background-color 300ms ease-in-out'
-            }}
-          />
-        ))}
-      </Stack>
-    </Box>
-  );
-
   return (
-    <Container maxWidth={false} sx={{ maxWidth: '680px', py: { xs: 4, md: 8 } }}>
-      <Box mb={4}>
-        <Typography component="h1" variant="h1" gutterBottom sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' }, mb: 1.5, letterSpacing: '-0.02em' }}>
-          Project Enquiry
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.0625rem', lineHeight: 1.5 }}>
-          Please provide some details about your project. It takes about 3 minutes.
-        </Typography>
-      </Box>
+    <div className="w-full flex flex-col items-center">
+      <div className="w-full max-w-[680px] h-32 md:h-48 shrink-0 relative rounded-b-2xl md:rounded-b-3xl overflow-hidden shadow-sm">
+        <img src="/banner.jfif" alt="Brand Banner" className="absolute inset-0 w-full h-full object-cover" />
+      </div>
 
-      <CustomStepper />
+      <div className="w-full max-w-[680px] px-4 py-8 md:py-12">
+        <AnimatePresence mode="wait">
+        {isSuccess ? (
+          <motion.div 
+            key="success"
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="flex flex-col items-center text-center p-8 md:p-12 bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
+          >
+            <CheckCircle2 className="w-16 h-16 text-green-500 mb-6" />
+            <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 tracking-tight">
+              Enquiry received
+            </h2>
+            <p className="text-base text-gray-600 mb-8 max-w-[400px]">
+              Our team will review your request. You'll usually hear back within one business day.
+            </p>
+            <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#b512b8]/10 text-[#b512b8] rounded-xl font-medium text-[14px]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Redirecting to WhatsApp...
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
 
-      {errorMsg && (
-        <Alert severity="error" sx={{ mb: 4, borderRadius: 2 }}>
-          {errorMsg}
-        </Alert>
-      )}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        {/* STEP 1: Contact Information */}
-        <Collapse in={activeStep === 0} mountOnEnter unmountOnExit>
-          <Stack spacing={3} mb={5}>
-            <Controller
-              name="name"
-              control={control}
-              render={({ field }) => (
-                <CustomField label="Full Name" required htmlFor="name" error={errors.name}>
-                  <OutlinedInput {...field} id="name" autoComplete="name" placeholder="e.g. Jane Doe" notched={false} aria-required="true" aria-invalid={!!errors.name} />
-                </CustomField>
-              )}
-            />
+            <div className="mb-10">
+              <h1 className="text-3xl md:text-[40px] font-semibold text-gray-900 mb-3 tracking-tight">
+                Project enquiry
+              </h1>
+              <p className="text-[17px] text-gray-500 leading-relaxed">
+                Provide some details about your project. It takes about 3 minutes.
+              </p>
+            </div>
 
-            <Controller
-              name="email"
-              control={control}
-              render={({ field }) => (
-                <CustomField label="Email Address" required htmlFor="email" error={errors.email}>
-                  <OutlinedInput {...field} id="email" type="email" autoComplete="email" placeholder="jane@example.com" notched={false} aria-required="true" aria-invalid={!!errors.email} />
-                </CustomField>
-              )}
-            />
-
-            <Controller
-              name="whatsappNumber"
-              control={control}
-              render={({ field: { ref, ...field } }) => (
-                <CustomField label="WhatsApp Number" required htmlFor="whatsappNumber" error={errors.whatsappNumber}>
-                  <MuiTelInput 
-                    {...field}
-                    id="whatsappNumber"
-                    autoComplete="tel"
-                    defaultCountry="IN"
-                    forceCallingCode
-                    focusOnSelectCountry
-                    variant="outlined"
-                    InputProps={{ notched: false }}
-                    inputRef={ref}
-                    sx={{
-                      '& .MuiOutlinedInput-root': { borderRadius: '12px' },
-                      '& .MuiIconButton-root': { width: '44px', height: '44px', ml: 1 }
-                    }}
+            <div className="mb-10">
+              <p className="text-[13px] uppercase tracking-wide text-gray-500 font-semibold mb-2">
+                Step {activeStep + 1} of {steps.length}
+              </p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                {steps[activeStep]}
+              </h2>
+              <div className="flex gap-2 items-center">
+                {steps.map((_, index) => (
+                  <div 
+                    key={index}
+                    className={cn(
+                      "h-1.5 flex-1 rounded-full transition-colors duration-300",
+                      index <= activeStep ? "bg-[#b512b8]" : "bg-gray-200"
+                    )}
                   />
-                </CustomField>
-              )}
-            />
+                ))}
+              </div>
+            </div>
 
-            <Controller
-              name="altNumber"
-              control={control}
-              render={({ field: { ref, ...field } }) => (
-                <CustomField label="Alternate Contact Number" htmlFor="altNumber" error={errors.altNumber} helperText="(Optional)">
-                  <MuiTelInput 
-                    {...field}
-                    id="altNumber"
-                    autoComplete="tel"
-                    defaultCountry="IN"
-                    forceCallingCode
-                    focusOnSelectCountry
-                    variant="outlined"
-                    InputProps={{ notched: false }}
-                    inputRef={ref}
-                    sx={{
-                      '& .MuiOutlinedInput-root': { borderRadius: '12px' },
-                      '& .MuiIconButton-root': { width: '44px', height: '44px', ml: 1 }
-                    }}
-                  />
-                </CustomField>
-              )}
-            />
+            {errorMsg && (
+              <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
+                {errorMsg}
+              </div>
+            )}
 
-            <Box pt={1}>
-              <Button variant="contained" size="large" fullWidth onClick={handleNext} sx={{ minHeight: '52px' }}>
-                Continue to Requirements
-              </Button>
-            </Box>
-          </Stack>
-        </Collapse>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <AnimatePresence mode="wait">
+                {activeStep === 0 && (
+                  <motion.div 
+                    key="step0"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6 mb-12"
+                  >
+                    <Controller
+                      name="name"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Full name" required htmlFor="name" error={errors.name}>
+                          <input 
+                            {...field}
+                            id="name"
+                            type="text"
+                            autoComplete="name"
+                            placeholder="Jane Doe"
+                            aria-invalid={!!errors.name}
+                            className={cn(inputStyles, errors.name && "border-red-500 focus-visible:ring-red-500")}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-        {/* STEP 2: Business & Requirements */}
-        <Collapse in={activeStep === 1} mountOnEnter unmountOnExit>
-          <Stack spacing={3} mb={5}>
-            <Controller
-              name="businessName"
-              control={control}
-              render={({ field }) => (
-                <CustomField label="Business Name" required htmlFor="businessName" error={errors.businessName}>
-                  <OutlinedInput {...field} id="businessName" autoComplete="organization" placeholder="e.g. Acme Corp" notched={false} aria-required="true" aria-invalid={!!errors.businessName} />
-                </CustomField>
-              )}
-            />
+                    <Controller
+                      name="email"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Business email" required htmlFor="email" error={errors.email}>
+                          <input 
+                            {...field}
+                            id="email"
+                            type="email"
+                            autoComplete="email"
+                            placeholder="name@company.com"
+                            aria-invalid={!!errors.email}
+                            className={cn(inputStyles, errors.email && "border-red-500 focus-visible:ring-red-500")}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-            <Controller
-              name="serviceOffered"
-              control={control}
-              render={({ field }) => (
-                <CustomField label="Service or Product" required htmlFor="serviceOffered" error={errors.serviceOffered}>
-                  <OutlinedInput {...field} id="serviceOffered" placeholder="e.g. Real Estate Consulting" notched={false} aria-required="true" aria-invalid={!!errors.serviceOffered} />
-                </CustomField>
-              )}
-            />
+                    <Controller
+                      name="whatsappNumber"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Phone number" required htmlFor="whatsappNumber" error={errors.whatsappNumber}>
+                          <PhoneInput
+                            {...field}
+                            id="whatsappNumber"
+                            placeholder="+91 99999 99999"
+                            error={!!errors.whatsappNumber}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-            <Controller
-              name="reqSummary"
-              control={control}
-              render={({ field }) => (
-                <CustomField label="Requirement Summary" required htmlFor="reqSummary" error={errors.reqSummary} helperText="In one sentence, what do you need?">
-                  <OutlinedInput {...field} id="reqSummary" placeholder="e.g. A new e-commerce website" notched={false} aria-required="true" aria-invalid={!!errors.reqSummary} />
-                </CustomField>
-              )}
-            />
+                    <Controller
+                      name="altNumber"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber}>
+                          <PhoneInput
+                            {...field}
+                            id="altNumber"
+                            placeholder="+91 99999 99999"
+                            error={!!errors.altNumber}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-            <Controller
-              name="expectedOutcome"
-              control={control}
-              render={({ field }) => (
-                <CustomField label="Expected Outcome" required htmlFor="expectedOutcome" error={errors.expectedOutcome} helperText="What is the primary goal?">
-                  <OutlinedInput {...field} id="expectedOutcome" placeholder="e.g. Increase online sales by 20%" notched={false} aria-required="true" aria-invalid={!!errors.expectedOutcome} />
-                </CustomField>
-              )}
-            />
+                    <div className="pt-4">
+                      <button 
+                        type="button" 
+                        onClick={handleNext}
+                        className="w-full h-14 bg-[#b512b8] hover:bg-[#8c0c8e] text-white font-medium text-[16px] rounded-xl transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2"
+                      >
+                        Continue
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
 
-            <Controller
-              name="assistanceType"
-              control={control}
-              render={({ field }) => (
-                <FormControl error={!!errors.assistanceType} fullWidth sx={{ mt: 1 }}>
-                  <InputLabel shrink sx={{ transform: 'none', position: 'relative', mb: '10px', fontWeight: 500, color: 'text.primary', fontSize: '14px' }}>
-                    How would you like to proceed? <span aria-hidden="true" style={{ color: '#94A3B8', marginLeft: '2px' }}>*</span>
-                  </InputLabel>
-                  <Stack spacing={1.5}>
-                    <Card 
-                      variant="outlined"
-                      sx={{ 
-                        borderColor: field.value === 'fill_details' ? 'primary.main' : 'divider',
-                        boxShadow: field.value === 'fill_details' ? '0 0 0 1px #B512B8' : 'none',
-                        bgcolor: field.value === 'fill_details' ? 'rgba(181, 18, 184, 0.03)' : '#FFFFFF',
-                        borderRadius: 2
-                      }}
-                    >
-                      <CardActionArea onClick={() => field.onChange('fill_details')} sx={{ p: 2 }}>
-                        <Stack direction="row" alignItems="flex-start" spacing={1.5}>
-                          <Radio checked={field.value === 'fill_details'} sx={{ p: 0, mt: 0.25 }} size="small" />
-                          <Box>
-                            <Typography variant="body1" fontWeight={field.value === 'fill_details' ? 600 : 500} color={field.value === 'fill_details' ? 'primary.dark' : 'text.primary'} sx={{ fontSize: '15px' }}>
-                              Fill requirement details
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" mt={0.25}>
-                              Takes about 5 minutes
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </CardActionArea>
-                    </Card>
+                {activeStep === 1 && (
+                  <motion.div 
+                    key="step1"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6 mb-12"
+                  >
+                    <Controller
+                      name="businessName"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Company name" required htmlFor="businessName" error={errors.businessName}>
+                          <input 
+                            {...field}
+                            id="businessName"
+                            type="text"
+                            autoComplete="organization"
+                            placeholder="Acme Corp"
+                            aria-invalid={!!errors.businessName}
+                            className={cn(inputStyles, errors.businessName && "border-red-500 focus-visible:ring-red-500")}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-                    <Card 
-                      variant="outlined"
-                      sx={{ 
-                        borderColor: field.value === 'call_back' ? 'primary.main' : 'divider',
-                        boxShadow: field.value === 'call_back' ? '0 0 0 1px #B512B8' : 'none',
-                        bgcolor: field.value === 'call_back' ? 'rgba(181, 18, 184, 0.03)' : '#FFFFFF',
-                        borderRadius: 2
-                      }}
-                    >
-                      <CardActionArea onClick={() => field.onChange('call_back')} sx={{ p: 2 }}>
-                        <Stack direction="row" alignItems="flex-start" spacing={1.5}>
-                          <Radio checked={field.value === 'call_back'} sx={{ p: 0, mt: 0.25 }} size="small" />
-                          <Box>
-                            <Typography variant="body1" fontWeight={field.value === 'call_back' ? 600 : 500} color={field.value === 'call_back' ? 'primary.dark' : 'text.primary'} sx={{ fontSize: '15px' }}>
-                              Need help, call me back
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" mt={0.25}>
-                              We'll call your given phone number
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </CardActionArea>
-                    </Card>
-                  </Stack>
-                  {errors.assistanceType && <FormHelperText role="alert" sx={{ mx: 0, mt: '8px', color: 'error.main' }}>{errors.assistanceType.message}</FormHelperText>}
-                </FormControl>
-              )}
-            />
+                    <Controller
+                      name="serviceOffered"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Product or service" required htmlFor="serviceOffered" error={errors.serviceOffered}>
+                          <input 
+                            {...field}
+                            id="serviceOffered"
+                            type="text"
+                            placeholder="Real estate consulting"
+                            aria-invalid={!!errors.serviceOffered}
+                            className={cn(inputStyles, errors.serviceOffered && "border-red-500 focus-visible:ring-red-500")}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-            <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={2} pt={2}>
-              <Button variant="outlined" size="large" onClick={handleBack} fullWidth disabled={isSubmitting} sx={{ minHeight: '52px' }}>
-                Back
-              </Button>
-              <Button 
-                type="submit" 
-                variant="contained" 
-                size="large" 
-                fullWidth 
-                disabled={isSubmitting}
-                startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
-                sx={{ minHeight: '52px' }}
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Request'}
-              </Button>
-            </Stack>
-          </Stack>
-        </Collapse>
-      </form>
+                    <Controller
+                      name="reqSummary"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Project summary" required htmlFor="reqSummary" error={errors.reqSummary} helperText="Briefly describe what you need.">
+                          <input 
+                            {...field}
+                            id="reqSummary"
+                            type="text"
+                            placeholder="A new e-commerce website"
+                            aria-invalid={!!errors.reqSummary}
+                            className={cn(inputStyles, errors.reqSummary && "border-red-500 focus-visible:ring-red-500")}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-      {/* Trust section moved to bottom & made compact */}
-      <Box mt={2} pt={4} borderTop="1px solid" borderColor="divider">
-        <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '12px' }}>
-          Our Commitment
-        </Typography>
-        <Stack spacing={1.5} component="ul" sx={{ m: 0, p: 0, listStyle: 'none' }}>
-          <Box component="li" display="flex" alignItems="center" gap={1.5}>
-            <CheckCircleOutlined sx={{ color: 'text.secondary', fontSize: '16px' }} />
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '14px' }}>We'll review every enquiry personally.</Typography>
-          </Box>
-          <Box component="li" display="flex" alignItems="center" gap={1.5}>
-            <CheckCircleOutlined sx={{ color: 'text.secondary', fontSize: '16px' }} />
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '14px' }}>Usually reply within one business day.</Typography>
-          </Box>
-          <Box component="li" display="flex" alignItems="center" gap={1.5}>
-            <LockOutlined sx={{ color: 'text.secondary', fontSize: '16px' }} />
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '14px' }}>No spam. No obligation.</Typography>
-          </Box>
-        </Stack>
-      </Box>
+                    <Controller
+                      name="expectedOutcome"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomField label="Expected outcome" required htmlFor="expectedOutcome" error={errors.expectedOutcome} helperText="What is the primary goal?">
+                          <input 
+                            {...field}
+                            id="expectedOutcome"
+                            type="text"
+                            placeholder="Increase online sales by 20%"
+                            aria-invalid={!!errors.expectedOutcome}
+                            className={cn(inputStyles, errors.expectedOutcome && "border-red-500 focus-visible:ring-red-500")}
+                          />
+                        </CustomField>
+                      )}
+                    />
 
-    </Container>
+                    <Controller
+                      name="assistanceType"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="flex flex-col mt-2 w-full">
+                          <Label.Root className="text-[14px] font-medium text-gray-900 mb-3">
+                            How would you like to proceed? <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>
+                          </Label.Root>
+                          
+                          <RadioGroup.Root 
+                            className="flex flex-col gap-3 w-full"
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            aria-label="Assistance Type"
+                          >
+                            <label 
+                              className={cn(
+                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
+                                field.value === 'fill_details' 
+                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]" 
+                                  : "border-gray-200 bg-white hover:border-gray-300"
+                              )}
+                            >
+                              <RadioGroup.Item 
+                                value="fill_details" 
+                                className={cn(
+                                  "w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2",
+                                  field.value === 'fill_details' ? "border-[#b512b8] bg-[#b512b8]" : "border-gray-300"
+                                )}
+                              >
+                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-white" />
+                              </RadioGroup.Item>
+                              <div className="ml-3.5">
+                                <p className={cn("text-[15px] font-medium", field.value === 'fill_details' ? "text-[#8c0c8e]" : "text-gray-900")}>
+                                  Fill requirement details
+                                </p>
+                                <p className="text-[14px] text-gray-500 mt-0.5">
+                                  Takes about 5 minutes
+                                </p>
+                              </div>
+                            </label>
+
+                            <label 
+                              className={cn(
+                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
+                                field.value === 'call_back' 
+                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]" 
+                                  : "border-gray-200 bg-white hover:border-gray-300"
+                              )}
+                            >
+                              <RadioGroup.Item 
+                                value="call_back" 
+                                className={cn(
+                                  "w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2",
+                                  field.value === 'call_back' ? "border-[#b512b8] bg-[#b512b8]" : "border-gray-300"
+                                )}
+                              >
+                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-white" />
+                              </RadioGroup.Item>
+                              <div className="ml-3.5">
+                                <p className={cn("text-[15px] font-medium", field.value === 'call_back' ? "text-[#8c0c8e]" : "text-gray-900")}>
+                                  Need help, call me back
+                                </p>
+                                <p className="text-[14px] text-gray-500 mt-0.5">
+                                  We'll call the number provided.
+                                </p>
+                              </div>
+                            </label>
+                          </RadioGroup.Root>
+
+                          {errors.assistanceType && (
+                            <p role="alert" className="text-[13px] text-red-600 mt-2">
+                              {errors.assistanceType.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+
+                    <div className="flex flex-col-reverse sm:flex-row gap-4 pt-6">
+                      <button 
+                        type="button"
+                        onClick={handleBack}
+                        disabled={isSubmitting}
+                        className="flex items-center justify-center w-full h-14 border border-gray-300 text-gray-700 font-medium text-[16px] rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 sm:w-1/2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:ring-offset-2"
+                      >
+                        Back
+                      </button>
+                      <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="relative flex items-center justify-center w-full h-14 bg-[#b512b8] hover:bg-[#8c0c8e] text-white font-medium text-[16px] rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-sm sm:w-1/2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2"
+                      >
+                        {isSubmitting ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Submitting...
+                          </span>
+                        ) : (
+                          <span>Submit project</span>
+                        )}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
+
+            <div className="mt-6 pt-10 border-t border-gray-200">
+              <h3 className="text-[12px] uppercase tracking-wide font-semibold text-gray-500 mb-5">
+                Privacy & Commitment
+              </h3>
+              <ul className="space-y-3.5 m-0 p-0 list-none">
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-[18px] h-[18px] text-gray-400 shrink-0" />
+                  <p className="text-[14px] text-gray-600">We'll review every enquiry personally.</p>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="w-[18px] h-[18px] text-gray-400 shrink-0" />
+                  <p className="text-[14px] text-gray-600">Replies usually within one business day.</p>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Lock className="w-[18px] h-[18px] text-gray-400 shrink-0" />
+                  <p className="text-[14px] text-gray-600">No spam. No obligation.</p>
+                </li>
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
+    </div>
   );
 }
