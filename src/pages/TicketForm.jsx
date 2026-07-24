@@ -243,11 +243,11 @@ export default function TicketForm() {
                       id="problem" 
                       placeholder='Please describe the issue or problem you&apos;re facing.&#10;&#10;Example: "The new leads from my website aren&apos;t showing up in our Google Sheet."'
                       multiline 
-                      minRows={4} 
+                      minRows={2} 
                       notched={false} 
                       aria-required="true" 
                       aria-invalid={!!errors.problem}
-                      sx={{ '& textarea': { resize: 'vertical', minHeight: '100px' } }}
+                      sx={{ '& textarea': { resize: 'vertical', minHeight: '60px' } }}
                     />
                   </CustomField>
                 )}
