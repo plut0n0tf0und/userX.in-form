@@ -10,19 +10,19 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { PhoneInput } from '../components/PhoneInput';
 
+import { isValidPhoneNumber } from 'libphonenumber-js';
+
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
-
-const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
 const steps = ['Contact details', 'Project details'];
 
 const schema = yup.object().shape({
   name: yup.string().required('Enter your full name.'),
   email: yup.string().email('Enter a valid email address.').required('Enter your business email.'),
-  whatsappNumber: yup.string().matches(phoneRegex, 'Enter a valid phone number.').required('Phone number is required.'),
-  altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || phoneRegex.test(value)),
+  whatsappNumber: yup.string().test('is-valid-phone', 'Enter a valid phone number.', (value) => value ? isValidPhoneNumber(value) : false).required('Phone number is required.'),
+  altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || isValidPhoneNumber(value)),
   
   businessName: yup.string().required('Enter your company name.'),
   serviceOffered: yup.string().required('Enter your product or service.'),
@@ -58,10 +58,10 @@ export default function ProjectForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { control, handleSubmit, formState: { errors }, trigger, setValue } = useForm({
+  const { control, handleSubmit, formState: { errors }, trigger, setValue, watch } = useForm({
     resolver: yupResolver(schema),
-    mode: 'onChange',
-    defaultValues: {
+    mode: 'onTouched',
+    defaultValues: JSON.parse(localStorage.getItem('ProjectForm_draft')) || {
       name: '',
       email: '',
       whatsappNumber: '',
@@ -75,6 +75,13 @@ export default function ProjectForm() {
   });
 
   const [leadId, setLeadId] = useState('');
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      localStorage.setItem('ProjectForm_draft', JSON.stringify(value));
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -145,6 +152,7 @@ export default function ProjectForm() {
       
       setIsSubmitting(false);
       setIsSuccess(true);
+      localStorage.removeItem('ProjectForm_draft');
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       setTimeout(() => {
@@ -160,8 +168,8 @@ export default function ProjectForm() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="w-full max-w-[680px] h-32 md:h-48 shrink-0 relative rounded-b-2xl md:rounded-b-3xl overflow-hidden shadow-sm">
-        <img src="/banner.jfif" alt="Brand Banner" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="w-full max-w-[680px] shrink-0 relative rounded-b-2xl md:rounded-b-3xl overflow-hidden shadow-sm">
+        <img src="/banner.jfif" alt="Brand Banner" className="w-full h-auto block" />
       </div>
 
       <div className="w-full max-w-[680px] px-4 py-8 md:py-12">

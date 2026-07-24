@@ -9,15 +9,15 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { PhoneInput } from '../components/PhoneInput';
 
+import { isValidPhoneNumber } from 'libphonenumber-js';
+
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-
 const schema = yup.object().shape({
-  whatsappNumber: yup.string().matches(phoneRegex, 'Enter a valid phone number.').required('Phone number is required.'),
-  altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || phoneRegex.test(value)),
+  whatsappNumber: yup.string().test('is-valid-phone', 'Enter a valid phone number.', (value) => value ? isValidPhoneNumber(value) : false).required('Phone number is required.'),
+  altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || isValidPhoneNumber(value)),
   email: yup.string().email('Enter a valid email address.').required('Business email is required.'),
   name: yup.string().required('Enter your full name.'),
   problem: yup.string().required('Describe your issue.'),
@@ -49,10 +49,10 @@ export default function TicketForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { control, handleSubmit, formState: { errors }, setValue } = useForm({
+  const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     resolver: yupResolver(schema),
-    mode: 'onChange',
-    defaultValues: {
+    mode: 'onTouched',
+    defaultValues: JSON.parse(localStorage.getItem('TicketForm_draft')) || {
       whatsappNumber: '',
       altNumber: '',
       email: '',
@@ -62,6 +62,13 @@ export default function TicketForm() {
   });
 
   const [leadId, setLeadId] = useState('');
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      localStorage.setItem('TicketForm_draft', JSON.stringify(value));
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -104,6 +111,7 @@ export default function TicketForm() {
       
       setIsSubmitting(false);
       setIsSuccess(true);
+      localStorage.removeItem('TicketForm_draft');
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       setTimeout(() => {
@@ -119,8 +127,8 @@ export default function TicketForm() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="w-full max-w-[680px] h-32 md:h-48 shrink-0 relative rounded-b-2xl md:rounded-b-3xl overflow-hidden shadow-sm">
-        <img src="/banner.jfif" alt="Brand Banner" className="absolute inset-0 w-full h-full object-cover" />
+      <div className="w-full max-w-[680px] shrink-0 relative rounded-b-2xl md:rounded-b-3xl overflow-hidden shadow-sm">
+        <img src="/banner.jfif" alt="Brand Banner" className="w-full h-auto block" />
       </div>
       
       <div className="w-full max-w-[680px] px-4 py-8 md:py-12">

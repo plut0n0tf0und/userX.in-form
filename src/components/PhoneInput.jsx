@@ -13,7 +13,7 @@ function cn(...inputs) {
 
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
 
-export function PhoneInput({ value, onChange, error, id, disabled, placeholder }) {
+export function PhoneInput({ value, onChange, onBlur, inputRef, error, disabled, id, placeholder }) {
   const [open, setOpen] = useState(false);
   const [country, setCountry] = useState('IN');
 
@@ -38,22 +38,46 @@ export function PhoneInput({ value, onChange, error, id, disabled, placeholder }
     setCountry(c.code);
     setOpen(false);
     
-    const parsed = parsePhoneNumberFromString(value || '');
-    if (parsed) {
-      onChange(`${c.dialCode} ${parsed.nationalNumber}`);
+    // When changing country, if the field is empty, don't auto-fill the dial code to prevent errors
+    // Only format if there's already a national number
+    const currentNationalNumber = value ? value.replace(/^\+\d+\s*/, '') : '';
+    
+    if (currentNationalNumber) {
+      const formatter = new AsYouType(c.code);
+      formatter.input(`${c.dialCode}${currentNationalNumber.replace(/\D/g, '')}`);
+      onChange(formatter.getNumber()?.formatInternational() || `${c.dialCode} ${currentNationalNumber}`);
     } else {
-      onChange(`${c.dialCode} `);
+      // If the field is completely empty, keep it empty. 
+      // The placeholder dynamically shows the format.
+      if (value !== '') onChange('');
     }
   };
 
   const handleInputChange = (e) => {
     let inputValue = e.target.value;
-    const formatter = new AsYouType(country);
-    const formatted = formatter.input(inputValue);
-    onChange(formatted);
-  };
+    
+    if (!inputValue) {
+      onChange('');
+      return;
+    }
 
+    const prefix = `+${getCountryCallingCode(country)}`;
+    if (!inputValue.startsWith('+')) {
+      inputValue = `${prefix} ${inputValue}`;
+    }
+
+    const formatter = new AsYouType(country);
+    formatter.input(inputValue);
+    onChange(formatter.current || inputValue);
+  };
   const Flag = Flags[country];
+
+  const dynamicPlaceholder = useMemo(() => {
+    const formatter = new AsYouType(country);
+    let sample = '9999999999';
+    // Format the sample to get the pattern
+    return formatter.input(sample).replace(/9/g, '5');
+  }, [country]);
 
   return (
     <div className={cn(
@@ -64,6 +88,7 @@ export function PhoneInput({ value, onChange, error, id, disabled, placeholder }
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger 
           disabled={disabled} 
+          aria-label="Select country"
           className="flex items-center gap-2 px-3 hover:bg-gray-50 transition-colors border-r border-gray-200 outline-none focus-visible:bg-gray-100 shrink-0"
         >
           {Flag ? <Flag className="w-5 h-auto shadow-sm rounded-[2px]" /> : <div className="w-5 h-3.5 bg-gray-200 rounded-[2px]" />}
@@ -118,12 +143,14 @@ export function PhoneInput({ value, onChange, error, id, disabled, placeholder }
       </Popover.Root>
 
       <input
+        ref={inputRef}
         id={id}
         type="tel"
         value={value}
         onChange={handleInputChange}
+        onBlur={onBlur}
         disabled={disabled}
-        placeholder={placeholder || "+91 99999 99999"}
+        placeholder={placeholder || dynamicPlaceholder}
         className="flex-1 min-w-0 bg-transparent px-3.5 py-2 text-[15px] text-gray-900 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed"
       />
     </div>
