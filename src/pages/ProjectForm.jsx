@@ -18,26 +18,35 @@ export function cn(...inputs) {
 
 const steps = ['Contact details', 'Project details'];
 
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 const schema = yup.object().shape({
   name: yup.string().required('Enter your full name.'),
-  email: yup.string().email('Enter a valid email address.').required('Enter your business email.'),
+  email: yup.string().required('Enter your business email.').matches(emailRegex, 'Enter a valid email address (e.g. name@company.com).'),
   whatsappNumber: yup.string().test('is-valid-phone', 'Enter a valid phone number.', (value) => value ? isValidPhoneNumber(value) : false).required('Phone number is required.'),
   altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || isValidPhoneNumber(value)),
   
   businessName: yup.string().required('Enter your company name.'),
   serviceOffered: yup.string().required('Enter your product or service.'),
-  reqSummary: yup.string().required('Enter a project summary.'),
-  expectedOutcome: yup.string().required('Enter expected outcome.'),
+  reqSummary: yup.string().required('Enter a project summary.').max(120, 'Please keep summary to 1 short line (max 120 chars).'),
+  expectedOutcome: yup.string().required('Enter expected outcome.').max(120, 'Please keep expected outcome to 1 short line (max 120 chars).'),
   assistanceType: yup.string().required('Select how to proceed.'),
 });
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxLRftndaH_znmmYtWfL9mmP9hoWXiPaBb8sOGBO5DPXZncXF4hX5akHaMgj8CEcMwW/exec";
 
-const CustomField = ({ label, required, error, helperText, children, htmlFor }) => (
+const CustomField = ({ label, required, error, helperText, children, htmlFor, maxLength, currentLength }) => (
   <div className="flex flex-col space-y-2 w-full">
-    <Label.Root htmlFor={htmlFor} className="text-[14px] font-medium text-gray-900">
-      {label} {required && <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>}
-    </Label.Root>
+    <div className="flex items-center justify-between">
+      <Label.Root htmlFor={htmlFor} className="text-[14px] font-medium text-gray-900">
+        {label} {required && <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>}
+      </Label.Root>
+      {maxLength !== undefined && (
+        <span className={cn("text-[12px] font-medium transition-colors", (currentLength || 0) >= maxLength ? "text-red-500 font-semibold" : "text-gray-400")}>
+          {currentLength || 0}/{maxLength}
+        </span>
+      )}
+    </div>
     {children}
     {(helperText || error) && (
       <p 
@@ -51,6 +60,7 @@ const CustomField = ({ label, required, error, helperText, children, htmlFor }) 
 );
 
 const inputStyles = "flex h-12 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-[15px] text-gray-900 transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] disabled:cursor-not-allowed disabled:opacity-50";
+const textareaStyles = "flex min-h-[80px] w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-[15px] text-gray-900 transition-colors placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] disabled:cursor-not-allowed disabled:opacity-50 resize-y";
 
 export default function ProjectForm() {
   const [activeStep, setActiveStep] = useState(0);
@@ -58,9 +68,9 @@ export default function ProjectForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const { control, handleSubmit, formState: { errors }, trigger, setValue, watch } = useForm({
+  const { control, handleSubmit, formState: { errors }, trigger, setValue, watch, getValues } = useForm({
     resolver: yupResolver(schema),
-    mode: 'onTouched',
+    mode: 'onSubmit',
     defaultValues: JSON.parse(localStorage.getItem('ProjectForm_draft')) || {
       name: '',
       email: '',
@@ -111,6 +121,22 @@ export default function ProjectForm() {
     if (fieldsToValidate.length > 0) {
       const isValid = await trigger(fieldsToValidate);
       if (isValid) {
+        const values = getValues();
+        const partialPayload = {
+          action: "submit_partial_lead",
+          leadId: leadId,
+          name: values.name,
+          email: values.email,
+          whatsappNumber: values.whatsappNumber,
+          altNumber: values.altNumber
+        };
+        fetch(scriptURL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(partialPayload)
+        }).catch(err => console.error('Failed to log partial draft:', err));
+
         setActiveStep((prev) => prev + 1);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -287,35 +313,37 @@ export default function ProjectForm() {
                       )}
                     />
 
-                    <Controller
-                      name="whatsappNumber"
-                      control={control}
-                      render={({ field }) => (
-                        <CustomField label="Phone number" required htmlFor="whatsappNumber" error={errors.whatsappNumber}>
-                          <PhoneInput
-                            {...field}
-                            id="whatsappNumber"
-                            placeholder="+91 99999 99999"
-                            error={!!errors.whatsappNumber}
-                          />
-                        </CustomField>
-                      )}
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Controller
+                        name="whatsappNumber"
+                        control={control}
+                        render={({ field }) => (
+                          <CustomField label="Phone number" required htmlFor="whatsappNumber" error={errors.whatsappNumber}>
+                            <PhoneInput
+                              {...field}
+                              id="whatsappNumber"
+                              autoComplete="tel"
+                              error={!!errors.whatsappNumber}
+                            />
+                          </CustomField>
+                        )}
+                      />
 
-                    <Controller
-                      name="altNumber"
-                      control={control}
-                      render={({ field }) => (
-                        <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber}>
-                          <PhoneInput
-                            {...field}
-                            id="altNumber"
-                            placeholder="+91 99999 99999"
-                            error={!!errors.altNumber}
-                          />
-                        </CustomField>
-                      )}
-                    />
+                      <Controller
+                        name="altNumber"
+                        control={control}
+                        render={({ field }) => (
+                          <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber}>
+                            <PhoneInput
+                              {...field}
+                              id="altNumber"
+                              autoComplete="off"
+                              error={!!errors.altNumber}
+                            />
+                          </CustomField>
+                        )}
+                      />
+                    </div>
 
                     <div className="pt-4">
                       <button 
@@ -377,14 +405,23 @@ export default function ProjectForm() {
                       name="reqSummary"
                       control={control}
                       render={({ field }) => (
-                        <CustomField label="Project summary" required htmlFor="reqSummary" error={errors.reqSummary} helperText="Briefly describe what you need.">
-                          <input 
+                        <CustomField 
+                          label="Project summary" 
+                          required 
+                          htmlFor="reqSummary" 
+                          error={errors.reqSummary} 
+                          helperText="Short 1-line summary about what you need."
+                          maxLength={120}
+                          currentLength={(watch('reqSummary') || '').length}
+                        >
+                          <textarea 
                             {...field}
                             id="reqSummary"
-                            type="text"
-                            placeholder="A new e-commerce website"
+                            rows={3}
+                            maxLength={120}
+                            placeholder="e.g., Build an e-commerce website for clothing"
                             aria-invalid={!!errors.reqSummary}
-                            className={cn(inputStyles, errors.reqSummary && "border-red-500 focus-visible:ring-red-500")}
+                            className={cn(textareaStyles, errors.reqSummary && "border-red-500 focus-visible:ring-red-500")}
                           />
                         </CustomField>
                       )}
@@ -394,14 +431,23 @@ export default function ProjectForm() {
                       name="expectedOutcome"
                       control={control}
                       render={({ field }) => (
-                        <CustomField label="Expected outcome" required htmlFor="expectedOutcome" error={errors.expectedOutcome} helperText="What is the primary goal?">
-                          <input 
+                        <CustomField 
+                          label="Expected outcome" 
+                          required 
+                          htmlFor="expectedOutcome" 
+                          error={errors.expectedOutcome} 
+                          helperText="Short 1-line summary about outcome or result expected."
+                          maxLength={120}
+                          currentLength={(watch('expectedOutcome') || '').length}
+                        >
+                          <textarea 
                             {...field}
                             id="expectedOutcome"
-                            type="text"
-                            placeholder="Increase online sales by 20%"
+                            rows={3}
+                            maxLength={120}
+                            placeholder="e.g., Launch in 30 days & drive online sales"
                             aria-invalid={!!errors.expectedOutcome}
-                            className={cn(inputStyles, errors.expectedOutcome && "border-red-500 focus-visible:ring-red-500")}
+                            className={cn(textareaStyles, errors.expectedOutcome && "border-red-500 focus-visible:ring-red-500")}
                           />
                         </CustomField>
                       )}

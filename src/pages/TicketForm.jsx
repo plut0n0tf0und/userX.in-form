@@ -15,10 +15,12 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 const schema = yup.object().shape({
   whatsappNumber: yup.string().test('is-valid-phone', 'Enter a valid phone number.', (value) => value ? isValidPhoneNumber(value) : false).required('Phone number is required.'),
   altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || isValidPhoneNumber(value)),
-  email: yup.string().email('Enter a valid email address.').required('Business email is required.'),
+  email: yup.string().required('Business email is required.').matches(emailRegex, 'Enter a valid email address (e.g. name@company.com).'),
   name: yup.string().required('Enter your full name.'),
   problem: yup.string().required('Describe your issue.'),
 });
@@ -51,7 +53,7 @@ export default function TicketForm() {
 
   const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     resolver: yupResolver(schema),
-    mode: 'onTouched',
+    mode: 'onSubmit',
     defaultValues: JSON.parse(localStorage.getItem('TicketForm_draft')) || {
       whatsappNumber: '',
       altNumber: '',
@@ -199,30 +201,18 @@ export default function TicketForm() {
               <div className="p-6 md:p-8 bg-white rounded-3xl border border-gray-200/60 shadow-[0_2px_20px_rgb(0,0,0,0.02)] space-y-6">
                 
                 <Controller
-                  name="whatsappNumber"
+                  name="name"
                   control={control}
                   render={({ field }) => (
-                    <CustomField label="Phone number" required htmlFor="whatsappNumber" error={errors.whatsappNumber} helperText="We'll use this to contact you.">
-                      <PhoneInput
+                    <CustomField label="Full name" required htmlFor="name" error={errors.name}>
+                      <input 
                         {...field}
-                        id="whatsappNumber"
-                        placeholder="+91 99999 99999"
-                        error={!!errors.whatsappNumber}
-                      />
-                    </CustomField>
-                  )}
-                />
-
-                <Controller
-                  name="altNumber"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber} helperText="Only if you'd like us to try another number.">
-                      <PhoneInput
-                        {...field}
-                        id="altNumber"
-                        placeholder="+91 99999 99999"
-                        error={!!errors.altNumber}
+                        id="name"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Jane Doe"
+                        aria-invalid={!!errors.name}
+                        className={cn(inputStyles, errors.name && "border-red-500 focus-visible:ring-red-500")}
                       />
                     </CustomField>
                   )}
@@ -246,23 +236,37 @@ export default function TicketForm() {
                   )}
                 />
 
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomField label="Full name" required htmlFor="name" error={errors.name}>
-                      <input 
-                        {...field}
-                        id="name"
-                        type="text"
-                        autoComplete="name"
-                        placeholder="Jane Doe"
-                        aria-invalid={!!errors.name}
-                        className={cn(inputStyles, errors.name && "border-red-500 focus-visible:ring-red-500")}
-                      />
-                    </CustomField>
-                  )}
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Controller
+                    name="whatsappNumber"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomField label="Phone number" required htmlFor="whatsappNumber" error={errors.whatsappNumber} helperText="We'll use this to contact you.">
+                        <PhoneInput
+                          {...field}
+                          id="whatsappNumber"
+                          autoComplete="tel"
+                          error={!!errors.whatsappNumber}
+                        />
+                      </CustomField>
+                    )}
+                  />
+
+                  <Controller
+                    name="altNumber"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber} helperText="Try another number.">
+                        <PhoneInput
+                          {...field}
+                          id="altNumber"
+                          autoComplete="off"
+                          error={!!errors.altNumber}
+                        />
+                      </CustomField>
+                    )}
+                  />
+                </div>
 
                 <Controller
                   name="problem"
