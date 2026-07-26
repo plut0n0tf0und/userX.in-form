@@ -153,8 +153,8 @@ export default function TicketForm() {
             </p>
             <p className="text-[14px] text-gray-500 mb-10">
               If your enquiry is urgent, you can also contact us on WhatsApp or email{' '}
-              <a href="mailto:support@userxpert.in" className="font-medium text-[#b512b8] hover:underline">
-                support@userxpert.in
+              <a href="mailto:support.userx.in@gmail.com" className="font-medium text-[#b512b8] hover:underline">
+                support.userx.in@gmail.com
               </a>.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
@@ -323,8 +323,8 @@ export default function TicketForm() {
 
             <p className="text-center text-[14px] text-gray-500">
               Need a faster response? WhatsApp us or email{' '}
-              <a href="mailto:support@userxpert.in" className="font-medium text-[#b512b8] hover:underline">
-                support@userxpert.in
+              <a href="mailto:support.userx.in@gmail.com" className="font-medium text-[#b512b8] hover:underline">
+                support.userx.in@gmail.com
               </a>.
             </p>
           </motion.div>
