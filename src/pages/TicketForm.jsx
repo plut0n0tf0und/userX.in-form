@@ -84,11 +84,21 @@ export default function TicketForm() {
     }
 
     if (urlPhone) {
-      let cleanPhone = decodeURIComponent(urlPhone).trim();
-      if (!cleanPhone.startsWith('+') && /^\d/.test(cleanPhone)) {
-         cleanPhone = '+' + cleanPhone; 
+      let rawPhone = decodeURIComponent(urlPhone).trim();
+      let digitsOnly = rawPhone.replace(/\D/g, '');
+      let cleanPhone = rawPhone.replace(/\s+/g, '');
+
+      if (cleanPhone.startsWith('+')) {
+        // Already formatted with + prefix
+      } else if (/^[6-9]\d{9}$/.test(digitsOnly)) {
+        cleanPhone = '+91' + digitsOnly;
+      } else if (digitsOnly.length > 0) {
+        cleanPhone = '+' + digitsOnly;
       }
-      setValue('whatsappNumber', cleanPhone, { shouldValidate: true });
+
+      if (digitsOnly.length >= 7 && isValidPhoneNumber(cleanPhone)) {
+        setValue('whatsappNumber', cleanPhone, { shouldValidate: true });
+      }
     }
   }, [setValue]);
 
