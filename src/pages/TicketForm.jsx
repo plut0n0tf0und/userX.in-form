@@ -128,8 +128,7 @@ export default function TicketForm() {
 
       setTimeout(() => {
         const businessPhone = "919962852828";
-        const message = encodeURIComponent("I have submitted a support ticket");
-        window.location.href = `whatsapp://send?phone=${businessPhone}&text=${message}`;
+        window.location.href = `whatsapp://send?phone=${businessPhone}`;
       }, 3000);
     } catch (err) {
       setIsSubmitting(false);

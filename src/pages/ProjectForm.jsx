@@ -87,11 +87,34 @@ export default function ProjectForm() {
   const [leadId, setLeadId] = useState('');
 
   useEffect(() => {
+    let timer;
     const subscription = watch((value) => {
       localStorage.setItem('ProjectForm_draft', JSON.stringify(value));
+      if (value.whatsappNumber && isValidPhoneNumber(value.whatsappNumber) && leadId) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          const partialPayload = {
+            action: "submit_partial_lead",
+            leadId: leadId,
+            name: value.name || "",
+            email: value.email || "",
+            whatsappNumber: value.whatsappNumber,
+            altNumber: value.altNumber || ""
+          };
+          fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(partialPayload)
+          }).catch(err => console.error('Failed to log partial draft:', err));
+        }, 1200);
+      }
     });
-    return () => subscription.unsubscribe();
-  }, [watch]);
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
+  }, [watch, leadId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -119,6 +142,23 @@ export default function ProjectForm() {
 
       if (digitsOnly.length >= 7 && isValidPhoneNumber(cleanPhone)) {
         setValue('whatsappNumber', cleanPhone, { shouldValidate: true });
+
+        // Instantly register draft on Form 1 entrance
+        const activeLeadId = urlLeadId || 'L-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        const partialPayload = {
+          action: "submit_partial_lead",
+          leadId: activeLeadId,
+          name: "",
+          email: "",
+          whatsappNumber: cleanPhone,
+          altNumber: ""
+        };
+        fetch(scriptURL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(partialPayload)
+        }).catch(err => console.error('Failed to log entrance draft:', err));
       }
     }
   }, [setValue]);
@@ -193,8 +233,7 @@ export default function ProjectForm() {
 
       setTimeout(() => {
         const businessPhone = "919962852828";
-        const message = encodeURIComponent("I have submitted the form");
-        window.location.href = `whatsapp://send?phone=${businessPhone}&text=${message}`;
+        window.location.href = `whatsapp://send?phone=${businessPhone}`;
       }, 3000);
     } catch (err) {
       setIsSubmitting(false);
