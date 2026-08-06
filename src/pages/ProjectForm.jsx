@@ -80,7 +80,7 @@ export default function ProjectForm() {
       serviceOffered: '',
       reqSummary: '',
       expectedOutcome: '',
-      assistanceType: 'fill_details'
+      assistanceType: 'call_back'
     }
   });
 
@@ -513,56 +513,24 @@ export default function ProjectForm() {
                           
                           <RadioGroup.Root 
                             className="flex flex-col gap-3 w-full"
-                            value={field.value}
+                            value={field.value || 'call_back'}
                             onValueChange={field.onChange}
                             aria-label="Assistance Type"
                           >
                             <label 
                               className={cn(
                                 "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
-                                field.value === 'fill_details' 
-                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]" 
-                                  : "border-gray-200 bg-white hover:border-gray-300"
-                              )}
-                            >
-                              <RadioGroup.Item 
-                                value="fill_details" 
-                                className={cn(
-                                  "w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2",
-                                  field.value === 'fill_details' ? "border-[#b512b8] bg-[#b512b8]" : "border-gray-300"
-                                )}
-                              >
-                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-white" />
-                              </RadioGroup.Item>
-                              <div className="ml-3.5">
-                                <p className={cn("text-[15px] font-medium", field.value === 'fill_details' ? "text-[#8c0c8e]" : "text-gray-900")}>
-                                  Fill requirement details
-                                </p>
-                                <p className="text-[14px] text-gray-500 mt-0.5">
-                                  Takes about 5 minutes
-                                </p>
-                              </div>
-                            </label>
-
-                            <label 
-                              className={cn(
-                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
-                                field.value === 'call_back' 
-                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]" 
-                                  : "border-gray-200 bg-white hover:border-gray-300"
+                                "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]"
                               )}
                             >
                               <RadioGroup.Item 
                                 value="call_back" 
-                                className={cn(
-                                  "w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2",
-                                  field.value === 'call_back' ? "border-[#b512b8] bg-[#b512b8]" : "border-gray-300"
-                                )}
+                                className="w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 border-[#b512b8] bg-[#b512b8]"
                               >
                                 <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-white" />
                               </RadioGroup.Item>
                               <div className="ml-3.5">
-                                <p className={cn("text-[15px] font-medium", field.value === 'call_back' ? "text-[#8c0c8e]" : "text-gray-900")}>
+                                <p className="text-[15px] font-medium text-[#8c0c8e]">
                                   Request a consultation call
                                 </p>
                                 <p className="text-[14px] text-gray-500 mt-0.5">
