@@ -525,9 +525,11 @@ export default function ProjectForm() {
                             >
                               <RadioGroup.Item 
                                 value="call_back" 
-                                className="w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 border-[#b512b8] bg-[#b512b8]"
+                                className="w-5 h-5 rounded-full border-2 border-[#b512b8] bg-white flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 transition-all"
                               >
-                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-white" />
+                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-[#b512b8]" />
+                                </RadioGroup.Indicator>
                               </RadioGroup.Item>
                               <div className="ml-3.5">
                                 <p className="text-[15px] font-medium text-[#8c0c8e]">
