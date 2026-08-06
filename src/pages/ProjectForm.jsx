@@ -563,10 +563,10 @@ export default function ProjectForm() {
                               </RadioGroup.Item>
                               <div className="ml-3.5">
                                 <p className={cn("text-[15px] font-medium", field.value === 'call_back' ? "text-[#8c0c8e]" : "text-gray-900")}>
-                                  Need help, call me back
+                                  Request a consultation call
                                 </p>
                                 <p className="text-[14px] text-gray-500 mt-0.5">
-                                  We'll call the number provided.
+                                  Our team will call you to understand your project.
                                 </p>
                               </div>
                             </label>
