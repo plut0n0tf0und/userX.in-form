@@ -322,11 +322,8 @@ export default function ProjectForm() {
           >
             <div className="mb-10">
               <h1 className="text-3xl md:text-[40px] font-semibold text-gray-900 mb-3 tracking-tight">
-                Contact form
+                Drop your details & tell us what you need
               </h1>
-              <p className="text-[17px] text-gray-500 leading-relaxed">
-                Provide some details about you. It takes about 3 minutes.
-              </p>
             </div>
 
             <div className="mb-10">
