@@ -331,10 +331,10 @@ export default function ProjectForm() {
           >
             <div className="mb-10">
               <h1 className="text-3xl md:text-[40px] font-semibold text-gray-900 mb-3 tracking-tight">
-                Project enquiry
+                Contact Form
               </h1>
               <p className="text-[17px] text-gray-500 leading-relaxed">
-                Provide some details about your project. It takes about 3 minutes.
+                Provide some details about you. it takes dumbass 3 mins
               </p>
             </div>
 
