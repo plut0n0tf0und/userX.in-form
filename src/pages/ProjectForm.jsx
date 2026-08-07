@@ -473,7 +473,7 @@ export default function ProjectForm() {
                                   Discuss your project with our team
                                 </p>
                                 <p className="text-[14px] text-gray-500 mt-0.5">
-                                  We'll schedule a consultation to understand your goals
+                                  We'll schedule a call to understand your goals
                                 </p>
                               </div>
                             </label>
