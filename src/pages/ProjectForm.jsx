@@ -51,11 +51,25 @@ const schema = yup.object().shape({
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxLRftndaH_znmmYtWfL9mmP9hoWXiPaBb8sOGBO5DPXZncXF4hX5akHaMgj8CEcMwW/exec";
 
+const renderErrorMessage = (msg) => {
+  if (!msg) return null;
+  const match = msg.match(/^(.*?)\s*(\(.*?\)\.?)$/);
+  if (match) {
+    return (
+      <span>
+        <span className="font-semibold text-red-700">{match[1]}</span>{' '}
+        <span className="font-normal text-red-600/80">{match[2]}</span>
+      </span>
+    );
+  }
+  return <span className="font-medium text-red-700">{msg}</span>;
+};
+
 const CustomField = ({ label, required, error, helperText, children, htmlFor, maxLength, currentLength }) => (
   <div className="flex flex-col space-y-2 w-full">
     <div className="flex items-center justify-between">
-      <Label.Root htmlFor={htmlFor} className={cn("text-[14px] font-medium transition-colors", error ? "text-red-700 font-semibold" : "text-gray-900")}>
-        {label} {required && <span aria-hidden="true" className={cn("ml-[2px]", error ? "text-red-500 font-bold" : "text-gray-400")}>*</span>}
+      <Label.Root htmlFor={htmlFor} className="text-[14px] font-medium text-gray-900">
+        {label} {required && <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>}
       </Label.Root>
       {maxLength !== undefined && (
         <span className={cn("text-[12px] font-medium transition-colors", (currentLength || 0) >= maxLength ? "text-red-500 font-semibold" : "text-gray-400")}>
@@ -67,10 +81,10 @@ const CustomField = ({ label, required, error, helperText, children, htmlFor, ma
     {error ? (
       <div 
         role="alert" 
-        className="flex items-center gap-2 mt-1.5 px-3.5 py-2 bg-red-50 border border-red-200/90 rounded-xl text-red-700 text-[13.5px] font-bold tracking-tight shadow-xs"
+        className="flex items-center gap-2 mt-1.5 px-3.5 py-2 bg-red-50/90 border border-red-200/80 rounded-xl text-[13.5px] shadow-xs"
       >
         <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-        <span>{error.message}</span>
+        <div>{renderErrorMessage(error.message)}</div>
       </div>
     ) : helperText ? (
       <p className="text-[13px] leading-[1.4] text-gray-500">
