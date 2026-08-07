@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Lock, Loader2 } from 'lucide-react';
+import { CheckCircle2, Lock, Loader2, AlertCircle } from 'lucide-react';
 import * as Label from '@radix-ui/react-label';
 import * as RadioGroup from '@radix-ui/react-radio-group';
 import { clsx } from 'clsx';
@@ -54,8 +54,8 @@ const scriptURL = "https://script.google.com/macros/s/AKfycbxLRftndaH_znmmYtWfL9
 const CustomField = ({ label, required, error, helperText, children, htmlFor, maxLength, currentLength }) => (
   <div className="flex flex-col space-y-2 w-full">
     <div className="flex items-center justify-between">
-      <Label.Root htmlFor={htmlFor} className="text-[14px] font-medium text-gray-900">
-        {label} {required && <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>}
+      <Label.Root htmlFor={htmlFor} className={cn("text-[14px] font-medium transition-colors", error ? "text-red-700 font-semibold" : "text-gray-900")}>
+        {label} {required && <span aria-hidden="true" className={cn("ml-[2px]", error ? "text-red-500 font-bold" : "text-gray-400")}>*</span>}
       </Label.Root>
       {maxLength !== undefined && (
         <span className={cn("text-[12px] font-medium transition-colors", (currentLength || 0) >= maxLength ? "text-red-500 font-semibold" : "text-gray-400")}>
@@ -64,14 +64,19 @@ const CustomField = ({ label, required, error, helperText, children, htmlFor, ma
       )}
     </div>
     {children}
-    {(helperText || error) && (
-      <p 
-        role={error ? "alert" : undefined} 
-        className={cn("text-[13px] leading-[1.4]", error ? "text-red-600" : "text-gray-500")}
+    {error ? (
+      <div 
+        role="alert" 
+        className="flex items-center gap-2 mt-1.5 px-3.5 py-2 bg-red-50 border border-red-200/90 rounded-xl text-red-700 text-[13.5px] font-bold tracking-tight shadow-xs"
       >
-        {error ? error.message : helperText}
+        <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+        <span>{error.message}</span>
+      </div>
+    ) : helperText ? (
+      <p className="text-[13px] leading-[1.4] text-gray-500">
+        {helperText}
       </p>
-    )}
+    ) : null}
   </div>
 );
 
@@ -83,6 +88,7 @@ export default function ProjectForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showValidationBanner, setShowValidationBanner] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, trigger, setValue, watch, getValues } = useForm({
     resolver: yupResolver(schema),
@@ -186,6 +192,7 @@ export default function ProjectForm() {
     
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
+      setShowValidationBanner(false);
       const values = getValues();
       const partialPayload = {
         action: "submit_partial_lead",
@@ -205,11 +212,19 @@ export default function ProjectForm() {
       setActiveStep(1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      const firstErrorField = fieldsToValidate.find(f => errors[f]);
-      if (firstErrorField) {
-        const el = document.getElementById(firstErrorField);
-        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-      }
+      setShowValidationBanner(true);
+      setTimeout(() => {
+        const bannerEl = document.getElementById('validation-banner');
+        if (bannerEl) {
+          bannerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          const firstErrorField = fieldsToValidate.find(f => errors[f]);
+          if (firstErrorField) {
+            const el = document.getElementById(firstErrorField);
+            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+          }
+        }
+      }, 50);
     }
   };
 
@@ -218,7 +233,18 @@ export default function ProjectForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const onError = () => {
+    setShowValidationBanner(true);
+    setTimeout(() => {
+      const bannerEl = document.getElementById('validation-banner');
+      if (bannerEl) {
+        bannerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
+  };
+
   const onSubmit = async (data) => {
+    setShowValidationBanner(false);
     setIsSubmitting(true);
     setErrorMsg('');
     
@@ -318,13 +344,28 @@ export default function ProjectForm() {
               </div>
             </div>
 
+            {showValidationBanner && (
+              <motion.div 
+                id="validation-banner"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-8 p-4 bg-red-50 border-2 border-red-200 rounded-2xl flex items-center gap-3 text-red-900 shadow-sm"
+              >
+                <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                <div className="flex-1 text-[14.5px]">
+                  <span className="font-bold text-red-950">Action required:</span> Please fix the highlighted error{Object.keys(errors).length > 1 ? 's' : ''} below to continue.
+                </div>
+              </motion.div>
+            )}
+
             {errorMsg && (
               <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
               <AnimatePresence mode="wait">
                 {activeStep === 0 && (
                   <motion.div 
