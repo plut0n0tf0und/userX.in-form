@@ -470,10 +470,10 @@ export default function ProjectForm() {
                                   "text-[15px] font-medium",
                                   field.value === 'discuss_team' ? "text-[#8c0c8e]" : "text-gray-900"
                                 )}>
-                                  Discuss your project with our team
+                                  Request a callback
                                 </p>
                                 <p className="text-[14px] text-gray-500 mt-0.5">
-                                  We'll schedule a call to understand your goals
+                                  We shall call you back to discuss project requirements
                                 </p>
                               </div>
                             </label>
