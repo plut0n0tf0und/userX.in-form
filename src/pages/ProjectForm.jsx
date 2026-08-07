@@ -316,7 +316,7 @@ export default function ProjectForm() {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             <div className="mb-10">
-              <h1 className="text-3xl md:text-[40px] font-semibold text-gray-900 mb-3 tracking-tight">
+              <h1 className="text-2xl md:text-[32px] font-semibold text-gray-900 mb-3 tracking-tight">
                 Drop your details & tell us what you need
               </h1>
             </div>
