@@ -27,11 +27,6 @@ const schema = yup.object().shape({
   altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || isValidPhoneNumber(value)),
   assistanceType: yup.string().required('Select how to proceed.'),
 
-  businessName: yup.string().when('assistanceType', {
-    is: 'complete_brief',
-    then: (s) => s.required('Enter your company name.'),
-    otherwise: (s) => s.notRequired(),
-  }),
   serviceOffered: yup.string().when('assistanceType', {
     is: 'complete_brief',
     then: (s) => s.required('Enter your product or service.'),
@@ -419,7 +414,7 @@ export default function ProjectForm() {
                         name="altNumber"
                         control={control}
                         render={({ field }) => (
-                          <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber}>
+                          <CustomField label="Alternate (Optional)" htmlFor="altNumber" error={errors.altNumber}>
                             <PhoneInput
                               {...field}
                               id="altNumber"
@@ -554,24 +549,6 @@ export default function ProjectForm() {
                     transition={{ duration: 0.2 }}
                     className="space-y-6 mb-12"
                   >
-                    <Controller
-                      name="businessName"
-                      control={control}
-                      render={({ field }) => (
-                        <CustomField label="Company name" required htmlFor="businessName" error={errors.businessName}>
-                          <input 
-                            {...field}
-                            id="businessName"
-                            type="text"
-                            autoComplete="organization"
-                            placeholder="Acme Corp"
-                            aria-invalid={!!errors.businessName}
-                            className={cn(inputStyles, errors.businessName && "border-red-500 focus-visible:ring-red-500")}
-                          />
-                        </CustomField>
-                      )}
-                    />
-
                     <Controller
                       name="serviceOffered"
                       control={control}

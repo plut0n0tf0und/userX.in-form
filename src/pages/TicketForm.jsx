@@ -284,7 +284,7 @@ export default function TicketForm() {
                     name="altNumber"
                     control={control}
                     render={({ field }) => (
-                      <CustomField label="Alternative (Optional)" htmlFor="altNumber" error={errors.altNumber} helperText="Try another number.">
+                      <CustomField label="Alternate (Optional)" htmlFor="altNumber" error={errors.altNumber} helperText="Try another number.">
                         <PhoneInput
                           {...field}
                           id="altNumber"
