@@ -96,12 +96,12 @@ export default function ProjectForm() {
       serviceOffered: '',
       reqSummary: '',
       expectedOutcome: '',
-      assistanceType: 'complete_brief'
+      assistanceType: 'discuss_team'
     }
   });
 
   const [leadId, setLeadId] = useState('');
-  const assistanceType = watch('assistanceType') || 'complete_brief';
+  const assistanceType = watch('assistanceType') || 'discuss_team';
   const totalSteps = assistanceType === 'discuss_team' ? 1 : 2;
 
   useEffect(() => {
@@ -414,44 +414,14 @@ export default function ProjectForm() {
                           
                           <RadioGroup.Root 
                             className="flex flex-col gap-3 w-full"
-                            value={field.value || 'complete_brief'}
+                            value={field.value || 'discuss_team'}
                             onValueChange={field.onChange}
                             aria-label="Assistance Type"
                           >
                             <label 
                               className={cn(
                                 "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
-                                (field.value || 'complete_brief') === 'complete_brief'
-                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]"
-                                  : "border-gray-200 hover:border-gray-300 bg-white"
-                              )}
-                            >
-                              <RadioGroup.Item 
-                                value="complete_brief" 
-                                id="radio-complete-brief"
-                                className="w-5 h-5 rounded-full border-2 border-[#b512b8] bg-white flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 transition-all shrink-0"
-                              >
-                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full">
-                                  <span className="w-2.5 h-2.5 rounded-full bg-[#b512b8]" />
-                                </RadioGroup.Indicator>
-                              </RadioGroup.Item>
-                              <div className="ml-3.5">
-                                <p className={cn(
-                                  "text-[15px] font-medium",
-                                  (field.value || 'complete_brief') === 'complete_brief' ? "text-[#8c0c8e]" : "text-gray-900"
-                                )}>
-                                  Complete the project brief yourself (default)
-                                </p>
-                                <p className="text-[14px] text-gray-500 mt-0.5">
-                                  Best if you already know your requirements. Takes about 5 minutes.
-                                </p>
-                              </div>
-                            </label>
-
-                            <label 
-                              className={cn(
-                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
-                                field.value === 'discuss_team'
+                                (field.value || 'discuss_team') === 'discuss_team'
                                   ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]"
                                   : "border-gray-200 hover:border-gray-300 bg-white"
                               )}
@@ -468,12 +438,42 @@ export default function ProjectForm() {
                               <div className="ml-3.5">
                                 <p className={cn(
                                   "text-[15px] font-medium",
-                                  field.value === 'discuss_team' ? "text-[#8c0c8e]" : "text-gray-900"
+                                  (field.value || 'discuss_team') === 'discuss_team' ? "text-[#8c0c8e]" : "text-gray-900"
                                 )}>
-                                  Request a callback
+                                  Request a callback (default)
                                 </p>
                                 <p className="text-[14px] text-gray-500 mt-0.5">
                                   We shall call you back to discuss project requirements
+                                </p>
+                              </div>
+                            </label>
+
+                            <label 
+                              className={cn(
+                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
+                                field.value === 'complete_brief'
+                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]"
+                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                              )}
+                            >
+                              <RadioGroup.Item 
+                                value="complete_brief" 
+                                id="radio-complete-brief"
+                                className="w-5 h-5 rounded-full border-2 border-[#b512b8] bg-white flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 transition-all shrink-0"
+                              >
+                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-[#b512b8]" />
+                                </RadioGroup.Indicator>
+                              </RadioGroup.Item>
+                              <div className="ml-3.5">
+                                <p className={cn(
+                                  "text-[15px] font-medium",
+                                  field.value === 'complete_brief' ? "text-[#8c0c8e]" : "text-gray-900"
+                                )}>
+                                  Complete the project brief yourself
+                                </p>
+                                <p className="text-[14px] text-gray-500 mt-0.5">
+                                  Best if you already know your requirements. Takes about 5 minutes.
                                 </p>
                               </div>
                             </label>
