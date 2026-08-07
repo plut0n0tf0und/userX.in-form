@@ -25,12 +25,28 @@ const schema = yup.object().shape({
   email: yup.string().required('Enter your business email.').matches(emailRegex, 'Enter a valid email address (e.g. name@company.com).'),
   whatsappNumber: yup.string().test('is-valid-phone', 'Enter a valid phone number.', (value) => value ? isValidPhoneNumber(value) : false).required('Phone number is required.'),
   altNumber: yup.string().test('is-valid-alt-phone', 'Enter a valid phone number.', (value) => !value || isValidPhoneNumber(value)),
-  
-  businessName: yup.string().required('Enter your company name.'),
-  serviceOffered: yup.string().required('Enter your product or service.'),
-  reqSummary: yup.string().required('Enter a project summary.').max(120, 'Please keep summary to 1 short line (max 120 chars).'),
-  expectedOutcome: yup.string().required('Enter expected outcome.').max(120, 'Please keep expected outcome to 1 short line (max 120 chars).'),
   assistanceType: yup.string().required('Select how to proceed.'),
+
+  businessName: yup.string().when('assistanceType', {
+    is: 'complete_brief',
+    then: (s) => s.required('Enter your company name.'),
+    otherwise: (s) => s.notRequired(),
+  }),
+  serviceOffered: yup.string().when('assistanceType', {
+    is: 'complete_brief',
+    then: (s) => s.required('Enter your product or service.'),
+    otherwise: (s) => s.notRequired(),
+  }),
+  reqSummary: yup.string().when('assistanceType', {
+    is: 'complete_brief',
+    then: (s) => s.required('Enter a project summary.').max(120, 'Please keep summary to 1 short line (max 120 chars).'),
+    otherwise: (s) => s.notRequired(),
+  }),
+  expectedOutcome: yup.string().when('assistanceType', {
+    is: 'complete_brief',
+    then: (s) => s.required('Enter expected outcome.').max(120, 'Please keep expected outcome to 1 short line (max 120 chars).'),
+    otherwise: (s) => s.notRequired(),
+  }),
 });
 
 const scriptURL = "https://script.google.com/macros/s/AKfycbxLRftndaH_znmmYtWfL9mmP9hoWXiPaBb8sOGBO5DPXZncXF4hX5akHaMgj8CEcMwW/exec";
@@ -80,11 +96,13 @@ export default function ProjectForm() {
       serviceOffered: '',
       reqSummary: '',
       expectedOutcome: '',
-      assistanceType: 'call_back'
+      assistanceType: 'complete_brief'
     }
   });
 
   const [leadId, setLeadId] = useState('');
+  const assistanceType = watch('assistanceType') || 'complete_brief';
+  const totalSteps = assistanceType === 'discuss_team' ? 1 : 2;
 
   useEffect(() => {
     let timer;
@@ -164,46 +182,39 @@ export default function ProjectForm() {
   }, [setValue]);
 
   const handleNext = async () => {
-    const fieldsToValidate = activeStep === 0 
-      ? ['name', 'email', 'whatsappNumber', 'altNumber']
-      : [];
+    const fieldsToValidate = ['name', 'email', 'whatsappNumber', 'altNumber', 'assistanceType'];
     
-    if (fieldsToValidate.length > 0) {
-      const isValid = await trigger(fieldsToValidate);
-      if (isValid) {
-        const values = getValues();
-        const partialPayload = {
-          action: "submit_partial_lead",
-          leadId: leadId,
-          name: values.name,
-          email: values.email,
-          whatsappNumber: values.whatsappNumber,
-          altNumber: values.altNumber
-        };
-        fetch(scriptURL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(partialPayload)
-        }).catch(err => console.error('Failed to log partial draft:', err));
+    const isValid = await trigger(fieldsToValidate);
+    if (isValid) {
+      const values = getValues();
+      const partialPayload = {
+        action: "submit_partial_lead",
+        leadId: leadId,
+        name: values.name,
+        email: values.email,
+        whatsappNumber: values.whatsappNumber,
+        altNumber: values.altNumber
+      };
+      fetch(scriptURL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(partialPayload)
+      }).catch(err => console.error('Failed to log partial draft:', err));
 
-        setActiveStep((prev) => prev + 1);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        const firstErrorField = fieldsToValidate.find(f => errors[f]);
-        if (firstErrorField) {
-          const el = document.getElementById(firstErrorField);
-          if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-        }
-      }
-    } else {
-      setActiveStep((prev) => prev + 1);
+      setActiveStep(1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const firstErrorField = fieldsToValidate.find(f => errors[f]);
+      if (firstErrorField) {
+        const el = document.getElementById(firstErrorField);
+        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      }
     }
   };
 
   const handleBack = () => {
-    setActiveStep((prev) => prev - 1);
+    setActiveStep(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -278,8 +289,6 @@ export default function ProjectForm() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-
-
             <div className="mb-10">
               <h1 className="text-3xl md:text-[40px] font-semibold text-gray-900 mb-3 tracking-tight">
                 Project enquiry
@@ -291,13 +300,13 @@ export default function ProjectForm() {
 
             <div className="mb-10">
               <p className="text-[13px] uppercase tracking-wide text-gray-500 font-semibold mb-2">
-                Step {activeStep + 1} of {steps.length}
+                Step {activeStep + 1} of {totalSteps}
               </p>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 {steps[activeStep]}
               </h2>
               <div className="flex gap-2 items-center">
-                {steps.map((_, index) => (
+                {Array.from({ length: totalSteps }).map((_, index) => (
                   <div 
                     key={index}
                     className={cn(
@@ -394,19 +403,121 @@ export default function ProjectForm() {
                       />
                     </div>
 
+                    <Controller
+                      name="assistanceType"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="flex flex-col mt-4 w-full">
+                          <Label.Root className="text-[14px] font-medium text-gray-900 mb-3">
+                            How would you like to proceed? <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>
+                          </Label.Root>
+                          
+                          <RadioGroup.Root 
+                            className="flex flex-col gap-3 w-full"
+                            value={field.value || 'complete_brief'}
+                            onValueChange={field.onChange}
+                            aria-label="Assistance Type"
+                          >
+                            <label 
+                              className={cn(
+                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
+                                (field.value || 'complete_brief') === 'complete_brief'
+                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]"
+                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                              )}
+                            >
+                              <RadioGroup.Item 
+                                value="complete_brief" 
+                                id="radio-complete-brief"
+                                className="w-5 h-5 rounded-full border-2 border-[#b512b8] bg-white flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 transition-all shrink-0"
+                              >
+                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-[#b512b8]" />
+                                </RadioGroup.Indicator>
+                              </RadioGroup.Item>
+                              <div className="ml-3.5">
+                                <p className={cn(
+                                  "text-[15px] font-medium",
+                                  (field.value || 'complete_brief') === 'complete_brief' ? "text-[#8c0c8e]" : "text-gray-900"
+                                )}>
+                                  Complete the project brief yourself (default)
+                                </p>
+                                <p className="text-[14px] text-gray-500 mt-0.5">
+                                  Best if you already know your requirements. Takes about 5 minutes.
+                                </p>
+                              </div>
+                            </label>
+
+                            <label 
+                              className={cn(
+                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
+                                field.value === 'discuss_team'
+                                  ? "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]"
+                                  : "border-gray-200 hover:border-gray-300 bg-white"
+                              )}
+                            >
+                              <RadioGroup.Item 
+                                value="discuss_team" 
+                                id="radio-discuss-team"
+                                className="w-5 h-5 rounded-full border-2 border-[#b512b8] bg-white flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 transition-all shrink-0"
+                              >
+                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-[#b512b8]" />
+                                </RadioGroup.Indicator>
+                              </RadioGroup.Item>
+                              <div className="ml-3.5">
+                                <p className={cn(
+                                  "text-[15px] font-medium",
+                                  field.value === 'discuss_team' ? "text-[#8c0c8e]" : "text-gray-900"
+                                )}>
+                                  Discuss your project with our team
+                                </p>
+                                <p className="text-[14px] text-gray-500 mt-0.5">
+                                  We'll schedule a consultation to understand your goals
+                                </p>
+                              </div>
+                            </label>
+                          </RadioGroup.Root>
+
+                          {errors.assistanceType && (
+                            <p role="alert" className="text-[13px] text-red-600 mt-2">
+                              {errors.assistanceType.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+
                     <div className="pt-4">
-                      <button 
-                        type="button" 
-                        onClick={handleNext}
-                        className="w-full h-14 bg-[#b512b8] hover:bg-[#8c0c8e] text-white font-medium text-[16px] rounded-xl transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2"
-                      >
-                        Continue
-                      </button>
+                      {assistanceType === 'complete_brief' ? (
+                        <button 
+                          type="button" 
+                          onClick={handleNext}
+                          className="w-full h-14 bg-[#b512b8] hover:bg-[#8c0c8e] text-white font-medium text-[16px] rounded-xl transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2"
+                        >
+                          Continue
+                        </button>
+                      ) : (
+                        <button 
+                          type="submit" 
+                          disabled={isSubmitting}
+                          className="w-full h-14 bg-[#b512b8] hover:bg-[#8c0c8e] text-white font-medium text-[16px] rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 flex items-center justify-center"
+                        >
+                          {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              Submitting...
+                            </span>
+                          ) : (
+                            <span>Submit enquiry</span>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 )}
 
-                {activeStep === 1 && (
+                {activeStep === 1 && assistanceType === 'complete_brief' && (
                   <motion.div 
                     key="step1"
                     initial={{ opacity: 0, x: 10 }}
@@ -502,55 +613,6 @@ export default function ProjectForm() {
                       )}
                     />
 
-                    <Controller
-                      name="assistanceType"
-                      control={control}
-                      render={({ field }) => (
-                        <div className="flex flex-col mt-2 w-full">
-                          <Label.Root className="text-[14px] font-medium text-gray-900 mb-3">
-                            How would you like to proceed? <span aria-hidden="true" className="text-gray-400 ml-[2px]">*</span>
-                          </Label.Root>
-                          
-                          <RadioGroup.Root 
-                            className="flex flex-col gap-3 w-full"
-                            value={field.value || 'call_back'}
-                            onValueChange={field.onChange}
-                            aria-label="Assistance Type"
-                          >
-                            <label 
-                              className={cn(
-                                "flex items-start p-4 rounded-xl border cursor-pointer transition-all",
-                                "border-[#b512b8] bg-[#b512b8]/5 shadow-[0_0_0_1px_#b512b8]"
-                              )}
-                            >
-                              <RadioGroup.Item 
-                                value="call_back" 
-                                className="w-5 h-5 rounded-full border-2 border-[#b512b8] bg-white flex items-center justify-center mt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#b512b8] focus-visible:ring-offset-2 transition-all"
-                              >
-                                <RadioGroup.Indicator className="flex items-center justify-center w-full h-full">
-                                  <span className="w-2.5 h-2.5 rounded-full bg-[#b512b8]" />
-                                </RadioGroup.Indicator>
-                              </RadioGroup.Item>
-                              <div className="ml-3.5">
-                                <p className="text-[15px] font-medium text-[#8c0c8e]">
-                                  Request a consultation call
-                                </p>
-                                <p className="text-[14px] text-gray-500 mt-0.5">
-                                  Our team will call you to understand your project.
-                                </p>
-                              </div>
-                            </label>
-                          </RadioGroup.Root>
-
-                          {errors.assistanceType && (
-                            <p role="alert" className="text-[13px] text-red-600 mt-2">
-                              {errors.assistanceType.message}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    />
-
                     <div className="flex flex-col-reverse sm:flex-row gap-4 pt-6">
                       <button 
                         type="button"
@@ -606,3 +668,4 @@ export default function ProjectForm() {
     </div>
   );
 }
+
