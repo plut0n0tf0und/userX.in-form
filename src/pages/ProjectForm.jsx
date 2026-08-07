@@ -325,7 +325,7 @@ export default function ProjectForm() {
                 Contact Form
               </h1>
               <p className="text-[17px] text-gray-500 leading-relaxed">
-                Provide some details about you. it takes dumbass 3 mins
+                Provide some details about yourself. It takes about 3 minutes.
               </p>
             </div>
 
