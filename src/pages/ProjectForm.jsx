@@ -102,7 +102,6 @@ export default function ProjectForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [showValidationBanner, setShowValidationBanner] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, trigger, setValue, watch, getValues } = useForm({
     resolver: yupResolver(schema),
@@ -206,7 +205,6 @@ export default function ProjectForm() {
     
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
-      setShowValidationBanner(false);
       const values = getValues();
       const partialPayload = {
         action: "submit_partial_lead",
@@ -226,17 +224,11 @@ export default function ProjectForm() {
       setActiveStep(1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setShowValidationBanner(true);
       setTimeout(() => {
-        const bannerEl = document.getElementById('validation-banner');
-        if (bannerEl) {
-          bannerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          const firstErrorField = fieldsToValidate.find(f => errors[f]);
-          if (firstErrorField) {
-            const el = document.getElementById(firstErrorField);
-            if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-          }
+        const firstErrorField = fieldsToValidate.find(f => errors[f]);
+        if (firstErrorField) {
+          const el = document.getElementById(firstErrorField);
+          if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         }
       }, 50);
     }
@@ -247,18 +239,17 @@ export default function ProjectForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const onError = () => {
-    setShowValidationBanner(true);
+  const onError = (formErrors) => {
     setTimeout(() => {
-      const bannerEl = document.getElementById('validation-banner');
-      if (bannerEl) {
-        bannerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const firstErrorField = Object.keys(formErrors)[0];
+      if (firstErrorField) {
+        const el = document.getElementById(firstErrorField);
+        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
       }
     }, 50);
   };
 
   const onSubmit = async (data) => {
-    setShowValidationBanner(false);
     setIsSubmitting(true);
     setErrorMsg('');
     
@@ -357,21 +348,6 @@ export default function ProjectForm() {
                 ))}
               </div>
             </div>
-
-            {showValidationBanner && (
-              <motion.div 
-                id="validation-banner"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-8 p-4 bg-red-50 border-2 border-red-200 rounded-2xl flex items-center gap-3 text-red-900 shadow-sm"
-              >
-                <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-                <div className="flex-1 text-[14.5px]">
-                  <span className="font-bold text-red-950">Action required:</span> Please fix the highlighted error{Object.keys(errors).length > 1 ? 's' : ''} below to continue.
-                </div>
-              </motion.div>
-            )}
 
             {errorMsg && (
               <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
